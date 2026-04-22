@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --brand: #45B34A;
+    --brand-dark: #16a34a;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply bg-white text-surface-900 font-sans antialiased;
+    font-size: 15px;
+  }
+
+  .dark body {
+    @apply bg-surface-950 text-surface-100;
+  }
+
+  h1, h2, h3 {
+    @apply font-display;
+  }
+
+  /* Hide scrollbar for horizontal scroll sections */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-surface-300 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-surface-400 opacity-80;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-2xl border border-surface-200 shadow-sm;
+  }
+
+  .dark .card {
+    @apply bg-surface-900 border-surface-800;
+  }
+
+  .input-base {
+    @apply w-full px-4 py-2.5 rounded-xl border border-surface-200 bg-white text-surface-900 placeholder-surface-300 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent transition-all text-sm;
+  }
+
+  .dark .input-base {
+    @apply bg-surface-800 border-surface-700 text-surface-100 placeholder-surface-500;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md bg-brand-500 hover:bg-brand-600 text-white font-medium text-sm transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md bg-surface-100 hover:bg-surface-200 text-surface-800 font-medium text-sm transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md text-surface-600 hover:bg-surface-100 hover:text-surface-900 font-medium text-sm transition-all active:scale-95;
+  }
+
+  .dark .btn-secondary {
+    @apply bg-surface-800 hover:bg-surface-700 text-surface-200;
+  }
+
+  .dark .btn-ghost {
+    @apply text-surface-400 hover:bg-surface-800 hover:text-surface-200;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+}
