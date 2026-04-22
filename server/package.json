@@ -1,0 +1,40 @@
+{
+  "name": "recipenest-backend",
+  "version": "2.0.0",
+  "description": "RecipeNest backend - A social media platform for chefs with authentication, recipe management, and admin controls",
+  "license": "ISC",
+  "author": "",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "lint": "eslint src --ext .js",
+    "lint:fix": "eslint src --ext .js --fix",
+    "seed:recipe": "node seed-recipe.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.9.0",
+    "cors": "^2.8.5",
+    "csv-parser": "^3.2.0",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-rate-limit": "^8.3.2",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "lodash": "^4.18.1",
+    "mongoose": "^9.3.0",
+    "multer": "^2.1.1",
+    "nodemailer": "^8.0.5",
+    "resend": "^6.12.2",
+    "streamifier": "^0.1.1",
+    "uuid": "^13.0.0",
+    "xss-clean": "^0.1.4",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0",
+    "nodemon": "^3.1.14"
+  }
+}
