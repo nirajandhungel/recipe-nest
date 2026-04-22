@@ -4,3 +4,6 @@ node_modules/
 dist/
 build/
 *.log
+
+server/seed-admin.js
+server/seed-recipe.js
