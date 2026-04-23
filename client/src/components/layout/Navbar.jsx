@@ -3,7 +3,7 @@ import { ChefHat, Search, Menu, X, BookMarked, LogOut, Settings, LayoutDashboard
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useRole } from '../../context/RoleContext';
-import { getInitials } from '../../utils/helpers';
+import { getInitials, getUserProfileImage } from '../../utils/helpers';
 
 const NAV_LINKS = [
   { to: '/recipes?mealType=Dinner', label: 'DINNERS' },
@@ -24,6 +24,7 @@ const Navbar = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const profileRef = useRef(null);
+  const userProfileImage = getUserProfileImage(user);
 
   const handleLogout = async () => {
     await logout();
@@ -113,8 +114,8 @@ const Navbar = () => {
                     onClick={() => setProfileOpen(!profileOpen)}
                     className="flex items-center gap-2"
                   >
-                    {user.profileImage ? (
-                      <img src={user.profileImage} alt="" className="w-9 h-9 rounded-full object-cover ring-2 ring-brand-500/30" />
+                    {userProfileImage ? (
+                      <img src={userProfileImage} alt="" className="w-9 h-9 rounded-full object-cover ring-2 ring-brand-500/30" />
                     ) : (
                       <div className="w-9 h-9 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-sm font-semibold">
                         {getInitials(user.firstName, user.lastName)}

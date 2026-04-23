@@ -38,7 +38,9 @@ export const ENDPOINTS = {
     COMMENT: (recipeId) => `/social/${recipeId}/comments`,
     DELETE_COMMENT: (commentId) => `/social/comments/${commentId}`,
     SAVE: (recipeId) => `/social/${recipeId}/save`,
+    SAVED: (recipeId) => `/social/${recipeId}/saved`,
     FOLLOW: (userId) => `/social/users/${userId}/follow`,
+    IS_FOLLOWING: (userId) => `/social/users/${userId}/is-following`,
     FOLLOWERS: (userId) => `/social/users/${userId}/followers`,
     FOLLOWING: (userId) => `/social/users/${userId}/following`,
     MY_SAVES: '/social/users/me/saves',
@@ -58,6 +60,13 @@ export const ENDPOINTS = {
     CHEF_ENGAGEMENT: '/analytics/chef/engagement',
     RECIPE_VIEWS: (id) => `/analytics/recipe/${id}/views`,
     RECIPE_ENGAGEMENT: (id) => `/analytics/recipe/${id}/engagement`,
+  },
+
+  // Chat
+  CHAT: {
+    CONVERSATIONS: '/chat/conversations',
+    CONVERSATION_BY_USER: (userId) => `/chat/conversations/${userId}`,
+    MESSAGES: (conversationId) => `/chat/conversations/${conversationId}/messages`,
   },
 
   // Admin

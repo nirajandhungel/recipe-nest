@@ -3,11 +3,11 @@ import {
   LayoutDashboard, UtensilsCrossed, PlusCircle, BarChart2,
   BookMarked, Users, UserCheck, Settings,
   ShieldCheck, FileWarning, ScrollText, TrendingUp,
-  ChefHat
+  ChefHat, MessageCircle
 } from 'lucide-react';
 import { useRole } from '../../context/RoleContext';
 import { useAuth } from '../../context/AuthContext';
-import { getInitials } from '../../utils/helpers';
+import { getInitials, getUserProfileImage } from '../../utils/helpers';
 
 const NavItem = ({ to, icon: Icon, label }) => (
   <NavLink
@@ -28,14 +28,15 @@ const NavItem = ({ to, icon: Icon, label }) => (
 const Sidebar = () => {
   const { isChef, isAdmin } = useRole();
   const { user } = useAuth();
+  const userProfileImage = getUserProfileImage(user);
 
   return (
     <aside className="w-60 flex-shrink-0 h-full flex flex-col border-r border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900">
       {/* User summary */}
       <div className="p-4 border-b border-surface-100 dark:border-surface-800">
         <div className="flex items-center gap-3">
-          {user?.profileImage ? (
-            <img src={user.profileImage} alt="" className="w-10 h-10 rounded-full object-cover" />
+          {userProfileImage ? (
+            <img src={userProfileImage} alt="" className="w-10 h-10 rounded-full object-cover" />
           ) : (
             <div className="w-10 h-10 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-sm font-semibold">
               {getInitials(user?.firstName, user?.lastName)}
@@ -54,6 +55,7 @@ const Sidebar = () => {
         <p className="px-3 pt-2 pb-1 text-xs font-semibold text-surface-400 uppercase tracking-wider">Account</p>
         <NavItem to="/settings/profile" icon={Settings} label="Profile Settings" />
         <NavItem to="/saved" icon={BookMarked} label="Saved Recipes" />
+        <NavItem to="/inbox" icon={MessageCircle} label="Inbox" />
         <NavItem to="/followers" icon={Users} label="Followers" />
         <NavItem to="/following" icon={UserCheck} label="Following" />
 

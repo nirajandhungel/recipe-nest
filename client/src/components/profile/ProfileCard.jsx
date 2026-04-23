@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { UtensilsCrossed, Users } from 'lucide-react';
 import { getInitials } from '../../utils/helpers';
@@ -9,8 +10,21 @@ const ProfileCard = ({ profile }) => {
   const fname = userId?.firstName || firstName;
   const lname = userId?.lastName || lastName;
   const uname = userId?.username || username;
-  const followers = profile.followerCount || userId?.followerCount || 0;
+  const initialFollowers = profile.followerCount || userId?.followerCount || 0;
   const recipeCount = profile.recipeCount || userId?.recipeCount || 0;
+  const initialIsFollowing = profile.isFollowing || false;
+
+  const [followers, setFollowers] = useState(initialFollowers);
+
+  const handleFollowChange = (isNowFollowing, delta, serverCount) => {
+    if (serverCount !== undefined) {
+      // Use the exact server count when available
+      setFollowers(serverCount);
+    } else {
+      // Optimistic update with delta
+      setFollowers((prev) => Math.max(0, prev + delta));
+    }
+  };
 
   return (
     <div className="card p-5 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
@@ -43,7 +57,11 @@ const ProfileCard = ({ profile }) => {
       </div>
 
       <div className="mt-4 flex justify-end">
-        <FollowButton userId={id} />
+        <FollowButton
+          userId={id}
+          initialFollowing={initialIsFollowing}
+          onFollowChange={handleFollowChange}
+        />
       </div>
     </div>
   );

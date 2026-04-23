@@ -4,7 +4,7 @@ import Loader from '../../components/ui/Loader';
 import Modal from '../../components/ui/Modal';
 import Button from '../../components/ui/Button';
 import Pagination from '../../components/ui/Pagination';
-import { formatDate, getInitials } from '../../utils/helpers';
+import { formatDate, getInitials, getUserProfileImage } from '../../utils/helpers';
 import { Search, ShieldOff, ShieldCheck, Trash2, Users, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -108,13 +108,19 @@ const AdminUsers = () => {
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => (
+                {users.map((user) => {
+                  const avatar = getUserProfileImage(user);
+                  return (
                   <tr key={user._id} className="border-b border-surface-50 dark:border-surface-800 hover:bg-surface-50 dark:hover:bg-surface-800/50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-surface-200 text-surface-600 flex items-center justify-center text-xs font-semibold flex-shrink-0">
-                          {getInitials(user.firstName, user.lastName)}
-                        </div>
+                        {avatar ? (
+                          <img src={avatar} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-surface-200 text-surface-600 flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                            {getInitials(user.firstName, user.lastName)}
+                          </div>
+                        )}
                         <div>
                           <p className="font-medium">{user.firstName} {user.lastName}</p>
                           <p className="text-xs text-surface-400">{user.email}</p>
@@ -157,7 +163,8 @@ const AdminUsers = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -4,16 +4,19 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { commentSchema } from '../../utils/validators';
 import { socialApi } from '../../api/socialApi';
 import { useAuth } from '../../context/AuthContext';
-import { timeAgo, getInitials } from '../../utils/helpers';
+import { timeAgo, getInitials, getUserProfileImage } from '../../utils/helpers';
 import Button from '../ui/Button';
-import { Trash2, MessageCircle } from 'lucide-react';
+import { Trash2, MessageCircle, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { Link, useNavigate } from 'react-router-dom';
 
-const CommentSection = ({ recipeId }) => {
+const CommentSection = ({ recipeId, onRatingChange }) => {
   const { user } = useAuth();
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedRating, setSelectedRating] = useState(0);
+  const navigate = useNavigate();
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm({
     resolver: yupResolver(commentSchema),
@@ -36,12 +39,27 @@ const CommentSection = ({ recipeId }) => {
   }, [recipeId]);
 
   const onSubmit = async ({ content }) => {
+    if (!user) {
+      toast.error('Please log in to comment');
+      navigate('/auth/login');
+      return;
+    }
     setSubmitting(true);
     try {
-      const { data } = await socialApi.addComment(recipeId, content);
-      const newComment = data.data?.comment || data.comment || { content, text: content, createdAt: new Date(), userId: user };
+      const { data } = await socialApi.addComment(recipeId, content, selectedRating || undefined);
+      const newComment = data.data?.comment || data.comment || {
+        content,
+        text: content,
+        rating: selectedRating || undefined,
+        createdAt: new Date(),
+        userId: user,
+      };
       setComments((prev) => [newComment, ...prev]);
+      if (data?.data?.recipeRating && onRatingChange) {
+        onRatingChange(data.data.recipeRating);
+      }
       reset();
+      setSelectedRating(0);
       toast.success('Comment added!');
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Failed to add comment');
@@ -70,20 +88,41 @@ const CommentSection = ({ recipeId }) => {
       {/* Comment form */}
       {user ? (
         <form onSubmit={handleSubmit(onSubmit)} className="flex gap-3">
-          <div className="w-9 h-9 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-sm font-semibold flex-shrink-0">
-            {getInitials(user.firstName, user.lastName)}
-          </div>
-          <div className="flex-1 flex gap-2">
-            <input
-              className="input-base flex-1"
-              placeholder="Add a comment..."
-              {...register('content')}
-            />
-            <Button type="submit" loading={submitting}>Post</Button>
+          {getUserProfileImage(user) ? (
+            <img src={getUserProfileImage(user)} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+          ) : (
+            <div className="w-9 h-9 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-sm font-semibold flex-shrink-0">
+              {getInitials(user.firstName, user.lastName)}
+            </div>
+          )}
+          <div className="flex-1">
+            <div className="flex items-center gap-1 mb-2">
+              {[1, 2, 3, 4, 5].map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setSelectedRating(value)}
+                  className="text-surface-300 hover:text-yellow-500 transition-colors"
+                  aria-label={`Rate ${value} star${value > 1 ? 's' : ''}`}
+                >
+                  <Star className={`w-4 h-4 ${value <= selectedRating ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input
+                className="input-base flex-1"
+                placeholder="Add a comment..."
+                {...register('content')}
+              />
+              <Button type="submit" loading={submitting}>Post</Button>
+            </div>
           </div>
         </form>
       ) : (
-        <p className="text-sm text-surface-500 italic">Log in to comment.</p>
+        <p className="text-sm text-surface-500 italic">
+          <Link to="/auth/login" className="text-brand-600 hover:underline">Log in</Link> to comment, like, save, and rate.
+        </p>
       )}
       {errors.content && <p className="text-xs text-red-500">{errors.content.message}</p>}
 
@@ -97,16 +136,24 @@ const CommentSection = ({ recipeId }) => {
           {comments.map((comment) => {
             const author = comment.userId || comment.author;
             const canDelete = user && (user._id === author?._id || user.role === 'admin');
+            const authorImage = getUserProfileImage(author);
+            const authorId = author?._id;
             return (
               <div key={comment._id} className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-surface-200 text-surface-600 flex items-center justify-center text-xs font-semibold flex-shrink-0">
-                  {getInitials(author?.firstName || 'U', author?.lastName || '')}
-                </div>
+                <Link to={authorId ? `/profile/${authorId}` : '#'} className={!authorId ? 'pointer-events-none' : ''}>
+                  {authorImage ? (
+                    <img src={authorImage} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-surface-200 text-surface-600 flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                      {getInitials(author?.firstName || 'U', author?.lastName || '')}
+                    </div>
+                  )}
+                </Link>
                 <div className="flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-medium">
+                    <Link to={authorId ? `/profile/${authorId}` : '#'} className={`text-sm font-medium hover:text-brand-600 ${!authorId ? 'pointer-events-none' : ''}`}>
                       {author?.firstName} {author?.lastName}
-                    </span>
+                    </Link>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-surface-400">{timeAgo(comment.createdAt)}</span>
                       {canDelete && (
@@ -116,6 +163,13 @@ const CommentSection = ({ recipeId }) => {
                       )}
                     </div>
                   </div>
+                  {comment.rating ? (
+                    <div className="flex items-center gap-0.5 mt-1 text-yellow-500">
+                      {[...Array(5)].map((_, idx) => (
+                        <Star key={idx} className={`w-3.5 h-3.5 ${idx < comment.rating ? 'fill-current' : 'opacity-30'}`} />
+                      ))}
+                    </div>
+                  ) : null}
                   <p className="text-sm text-surface-600 dark:text-surface-300 mt-0.5">{comment.content || comment.text}</p>
                 </div>
               </div>

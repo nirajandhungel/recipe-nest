@@ -55,7 +55,7 @@ export const useRecipes = () => {
   const publishRecipe = useCallback(async (id) => {
     await recipeApi.publish(id);
     setRecipes((prev) =>
-      prev.map((r) => (r._id === id ? { ...r, status: 'published', isPublished: true } : r))
+      prev.map((r) => (r._id === id ? { ...r, status: 'pending', isPublished: true } : r))
     );
     toast.success('Recipe published!');
   }, []);
