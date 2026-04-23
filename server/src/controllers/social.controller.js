@@ -9,8 +9,39 @@ const { getPaginationData } = require('../utils/helpers');
 const { sendSuccess, errorResponses, sendPaginated } = require('../utils/response');
 const { MESSAGES, HTTP_STATUS } = require('../constants');
 const { asyncHandler } = require('../middlewares/error.middleware');
+const { buildProfileImageMap, attachProfileImage } = require('../utils/profile-image');
 
 class SocialController {
+  static updateRecipeRatingStats = async (recipeId) => {
+    const ratingStats = await Comment.aggregate([
+      {
+        $match: {
+          recipeId: recipeId,
+          rating: { $gte: 1, $lte: 5 },
+        },
+      },
+      {
+        $group: {
+          _id: '$recipeId',
+          avgRating: { $avg: '$rating' },
+          ratingCount: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const nextRating = ratingStats[0]?.avgRating || 0;
+    const nextRatingCount = ratingStats[0]?.ratingCount || 0;
+
+    await Recipe.findByIdAndUpdate(recipeId, {
+      rating: Number(nextRating.toFixed(1)),
+      ratingCount: nextRatingCount,
+    });
+
+    return {
+      rating: Number(nextRating.toFixed(1)),
+      ratingCount: nextRatingCount,
+    };
+  };
   /**
    * Like a recipe
    */
@@ -30,7 +61,7 @@ class SocialController {
 
     await Profile.findOneAndUpdate({ userId: recipe.chefId }, { $inc: { totalLikes: 1 } });
 
-    return sendSuccess(res, HTTP_STATUS.CREATED, null, MESSAGES.LIKED_RECIPE);
+    return sendSuccess(res, HTTP_STATUS.CREATED, { liked: true, count: recipe.likes }, MESSAGES.LIKED_RECIPE);
   });
 
   /**
@@ -50,7 +81,7 @@ class SocialController {
 
     await Profile.findOneAndUpdate({ userId: recipe.chefId }, { $inc: { totalLikes: -1 } });
 
-    return sendSuccess(res, HTTP_STATUS.OK, null, MESSAGES.UNLIKED_RECIPE);
+    return sendSuccess(res, HTTP_STATUS.OK, { liked: false, count: recipe.likes }, MESSAGES.UNLIKED_RECIPE);
   });
 
   /**
@@ -87,15 +118,26 @@ class SocialController {
 
     recipe.comments += 1;
     await recipe.save();
+    let recipeRating = { rating: recipe.rating || 0, ratingCount: recipe.ratingCount || 0 };
+    if (rating) {
+      recipeRating = await SocialController.updateRecipeRatingStats(recipe._id);
+    }
 
     await Profile.findOneAndUpdate({ userId: recipe.chefId }, { $inc: { totalComments: 1 } });
     await comment.populate('userId', 'firstName lastName username');
+    const commentImageMap = await buildProfileImageMap([comment.userId?._id]);
+    attachProfileImage(comment.userId, commentImageMap);
 
     // Return both text and content for client compatibility
     const commentObj = comment.toObject();
     commentObj.content = commentObj.text;
 
-    return sendSuccess(res, HTTP_STATUS.CREATED, { comment: commentObj }, MESSAGES.COMMENT_ADDED);
+    return sendSuccess(
+      res,
+      HTTP_STATUS.CREATED,
+      { comment: commentObj, recipeRating },
+      MESSAGES.COMMENT_ADDED
+    );
   });
 
   /**
@@ -117,6 +159,10 @@ class SocialController {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
+    const commentImageMap = await buildProfileImageMap(comments.map((comment) => comment.userId?._id));
+    comments.forEach((comment) => {
+      attachProfileImage(comment.userId, commentImageMap);
+    });
 
     const meta = getPaginationData(total, page, limit);
 
@@ -142,6 +188,9 @@ class SocialController {
 
     if (recipe) {
       await Profile.findOneAndUpdate({ userId: recipe.chefId }, { $inc: { totalComments: -1 } });
+      if (comment.rating) {
+        await SocialController.updateRecipeRatingStats(recipe._id);
+      }
     }
 
     return sendSuccess(res, HTTP_STATUS.OK, null, MESSAGES.COMMENT_DELETED);
@@ -166,7 +215,7 @@ class SocialController {
 
     await Profile.findOneAndUpdate({ userId: recipe.chefId }, { $inc: { totalSaves: 1 } });
 
-    return sendSuccess(res, HTTP_STATUS.CREATED, null, MESSAGES.RECIPE_SAVED);
+    return sendSuccess(res, HTTP_STATUS.CREATED, { saved: true, count: recipe.saves }, MESSAGES.RECIPE_SAVED);
   });
 
   /**
@@ -186,7 +235,7 @@ class SocialController {
 
     await Profile.findOneAndUpdate({ userId: recipe.chefId }, { $inc: { totalSaves: -1 } });
 
-    return sendSuccess(res, HTTP_STATUS.OK, null, MESSAGES.RECIPE_UNSAVED);
+    return sendSuccess(res, HTTP_STATUS.OK, { saved: false, count: recipe.saves }, MESSAGES.RECIPE_UNSAVED);
   });
 
   /**
@@ -207,12 +256,16 @@ class SocialController {
 
     await Follow.create({ followerId: req.user.userId, followingId: userId });
 
-    await Promise.all([
-      User.findByIdAndUpdate(req.user.userId, { $inc: { followingCount: 1 } }),
-      User.findByIdAndUpdate(userId, { $inc: { followerCount: 1 } }),
+    const [currentUser, targetUser] = await Promise.all([
+      User.findByIdAndUpdate(req.user.userId, { $inc: { followingCount: 1 } }, { new: true }),
+      User.findByIdAndUpdate(userId, { $inc: { followerCount: 1 } }, { new: true }),
     ]);
 
-    return sendSuccess(res, HTTP_STATUS.CREATED, null, MESSAGES.FOLLOWED_USER);
+    return sendSuccess(res, HTTP_STATUS.CREATED, {
+      following: true,
+      followerCount: targetUser.followerCount,
+      followingCount: currentUser.followingCount,
+    }, MESSAGES.FOLLOWED_USER);
   });
 
   /**
@@ -227,12 +280,16 @@ class SocialController {
     const follow = await Follow.findOneAndDelete({ followerId: req.user.userId, followingId: userId });
     if (!follow) return errorResponses.notFound(res, 'Not following this chef');
 
-    await Promise.all([
-      User.findByIdAndUpdate(req.user.userId, { $inc: { followingCount: -1 } }),
-      User.findByIdAndUpdate(userId, { $inc: { followerCount: -1 } }),
+    const [currentUser, targetUser] = await Promise.all([
+      User.findByIdAndUpdate(req.user.userId, { $inc: { followingCount: -1 } }, { new: true }),
+      User.findByIdAndUpdate(userId, { $inc: { followerCount: -1 } }, { new: true }),
     ]);
 
-    return sendSuccess(res, HTTP_STATUS.OK, null, MESSAGES.UNFOLLOWED_USER);
+    return sendSuccess(res, HTTP_STATUS.OK, {
+      following: false,
+      followerCount: targetUser.followerCount,
+      followingCount: currentUser.followingCount,
+    }, MESSAGES.UNFOLLOWED_USER);
   });
 
   /**
@@ -253,6 +310,10 @@ class SocialController {
       .populate('followerId', 'firstName lastName username')
       .skip(skip)
       .limit(limit);
+    const followerImageMap = await buildProfileImageMap(followers.map((follow) => follow.followerId?._id));
+    followers.forEach((follow) => {
+      attachProfileImage(follow.followerId, followerImageMap);
+    });
 
     const meta = getPaginationData(total, page, limit);
 
@@ -277,6 +338,10 @@ class SocialController {
       .populate('followingId', 'firstName lastName username')
       .skip(skip)
       .limit(limit);
+    const followingImageMap = await buildProfileImageMap(following.map((follow) => follow.followingId?._id));
+    following.forEach((follow) => {
+      attachProfileImage(follow.followingId, followingImageMap);
+    });
 
     const meta = getPaginationData(total, page, limit);
 
@@ -303,6 +368,24 @@ class SocialController {
     const meta = getPaginationData(total, page, limit);
 
     return sendPaginated(res, HTTP_STATUS.OK, recipes, meta, 'Saved recipes retrieved successfully');
+  });
+
+  /**
+   * Check if user saved a recipe
+   */
+  static isRecipeSaved = asyncHandler(async (req, res) => {
+    const { recipeId } = req.params;
+    const save = await Save.findOne({ userId: req.user.userId, recipeId });
+    return sendSuccess(res, HTTP_STATUS.OK, { saved: !!save });
+  });
+
+  /**
+   * Check if user is following another user
+   */
+  static isFollowing = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    const follow = await Follow.findOne({ followerId: req.user.userId, followingId: userId });
+    return sendSuccess(res, HTTP_STATUS.OK, { following: !!follow });
   });
 }
 
