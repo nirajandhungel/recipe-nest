@@ -1,19 +1,26 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useRecipes } from '../../hooks/useRecipes';
 import { LikeButton, SaveButton } from '../../components/social/SocialButtons';
 import CommentSection from '../../components/social/CommentSection';
 import Loader from '../../components/ui/Loader';
-import { difficultyColor, formatDate, getInitials } from '../../utils/helpers';
+import { difficultyColor, formatDate, getInitials, getUserProfileImage } from '../../utils/helpers';
 import { Clock, Users, ChefHat, Tag, Star, Printer, Share2, UtensilsCrossed } from 'lucide-react';
 
 const RecipeDetails = () => {
   const { id } = useParams();
   const { recipe, loading, fetchRecipe } = useRecipes();
+  const [ratingAvg, setRatingAvg] = useState(0);
+  const [ratingCount, setRatingCount] = useState(0);
 
   useEffect(() => {
     fetchRecipe(id);
   }, [id]);
+
+  useEffect(() => {
+    setRatingAvg(recipe?.rating || 0);
+    setRatingCount(recipe?.ratingCount || 0);
+  }, [recipe?.rating, recipe?.ratingCount]);
 
   if (loading) return <Loader fullScreen />;
   if (!recipe) return <div className="text-center py-20 text-surface-400">Recipe not found.</div>;
@@ -21,10 +28,11 @@ const RecipeDetails = () => {
   const {
     title, description, imageUrl, cuisineType, difficulty, mealType,
     prepTimeMinutes, cookTimeMinutes, servings, tags, ingredients,
-    steps, likes, saves, rating, createdAt, chefId,
+    steps, likes, saves, createdAt, chefId,
   } = recipe;
 
   const totalTime = (prepTimeMinutes || 0) + (cookTimeMinutes || 0);
+  const chefProfileImage = getUserProfileImage(chefId);
 
   return (
     <div className="bg-white dark:bg-surface-950 min-h-screen">
@@ -58,8 +66,8 @@ const RecipeDetails = () => {
         {/* Chef info */}
         {chefId && (
           <Link to={`/profile/${chefId._id}`} className="flex items-center gap-3 mb-6 group w-fit">
-            {chefId.profileImage ? (
-              <img src={chefId.profileImage} alt="" className="w-10 h-10 rounded-full object-cover" />
+            {chefProfileImage ? (
+              <img src={chefProfileImage} alt="" className="w-10 h-10 rounded-full object-cover" />
             ) : (
               <div className="w-10 h-10 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-sm font-semibold">
                 {getInitials(chefId.firstName, chefId.lastName)}
@@ -78,9 +86,9 @@ const RecipeDetails = () => {
         <div className="flex flex-wrap items-center gap-4 py-4 border-y border-surface-200 dark:border-surface-800 mb-6">
           <div className="flex items-center gap-1 text-brand-500">
             {[...Array(5)].map((_, i) => (
-              <Star key={i} className={`w-4 h-4 ${i < Math.round(rating || 0) ? 'fill-current' : 'opacity-30'}`} />
+              <Star key={i} className={`w-4 h-4 ${i < Math.round(ratingAvg || 0) ? 'fill-current' : 'opacity-30'}`} />
             ))}
-            <span className="text-sm text-surface-500 ml-1">{likes || 0} Ratings</span>
+            <span className="text-sm text-surface-500 ml-1">{ratingCount || 0} Ratings</span>
           </div>
           <div className="flex items-center gap-2 ml-auto">
             <LikeButton recipeId={id} initialCount={likes} />
@@ -168,7 +176,13 @@ const RecipeDetails = () => {
 
         {/* Comments */}
         <div className="border-t border-surface-200 dark:border-surface-800 pt-8">
-          <CommentSection recipeId={id} />
+          <CommentSection
+            recipeId={id}
+            onRatingChange={(next) => {
+              setRatingAvg(next.rating || 0);
+              setRatingCount(next.ratingCount || 0);
+            }}
+          />
         </div>
       </div>
     </div>
