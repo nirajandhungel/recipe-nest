@@ -47,26 +47,122 @@ const Home = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [interactionState, setInteractionState] = useState({});
+
+  const initInteractionState = (recipes) => {
+    const initial = {};
+    recipes.forEach((recipe) => {
+      initial[recipe._id] = {
+        liked: false,
+        saved: false,
+        likes: recipe.likes || 0,
+        saves: recipe.saves || 0,
+      };
+    });
+    return initial;
+  };
+
+  const loadInteractionState = async (recipes) => {
+    const initial = initInteractionState(recipes);
+    if (!user || !recipes.length) {
+      setInteractionState(initial);
+      return;
+    }
+
+    const checks = await Promise.allSettled(
+      recipes.map((recipe) =>
+        Promise.all([socialApi.isLiked(recipe._id), socialApi.isSaved(recipe._id)])
+      )
+    );
+
+    checks.forEach((result, idx) => {
+      if (result.status !== 'fulfilled') return;
+      const recipeId = recipes[idx]._id;
+      const [likedRes, savedRes] = result.value;
+      initial[recipeId].liked = likedRes?.data?.data?.liked ?? false;
+      initial[recipeId].saved = savedRes?.data?.data?.saved ?? false;
+    });
+
+    setInteractionState(initial);
+  };
 
   const handleSave = async (recipeId) => {
     if (!user) { toast.error('Log in to save recipes'); navigate('/auth/login'); return; }
+    const wasSaved = !!interactionState[recipeId]?.saved;
+
+    setInteractionState((prev) => ({
+      ...prev,
+      [recipeId]: {
+        ...(prev[recipeId] || { likes: 0, saves: 0 }),
+        liked: prev[recipeId]?.liked || false,
+        saved: !wasSaved,
+        likes: prev[recipeId]?.likes || 0,
+        saves: wasSaved ? Math.max(0, (prev[recipeId]?.saves || 0) - 1) : (prev[recipeId]?.saves || 0) + 1,
+      },
+    }));
+
     try {
-      await socialApi.save(recipeId);
-      toast.success('Recipe saved!');
+      const { data } = wasSaved ? await socialApi.unsave(recipeId) : await socialApi.save(recipeId);
+      if (data?.data?.count !== undefined) {
+        setInteractionState((prev) => ({
+          ...prev,
+          [recipeId]: {
+            ...(prev[recipeId] || {}),
+            saves: data.data.count,
+          },
+        }));
+      }
+      toast.success(wasSaved ? 'Recipe removed from saves' : 'Recipe saved!');
     } catch (err) {
-      if (err?.response?.status === 409) toast.success('Already saved!');
-      else toast.error(err?.response?.data?.message || 'Save failed');
+      setInteractionState((prev) => ({
+        ...prev,
+        [recipeId]: {
+          ...(prev[recipeId] || {}),
+          saved: wasSaved,
+          saves: wasSaved ? (prev[recipeId]?.saves || 0) + 1 : Math.max(0, (prev[recipeId]?.saves || 0) - 1),
+        },
+      }));
+      toast.error(err?.response?.data?.message || 'Save failed');
     }
   };
 
   const handleLike = async (recipeId) => {
     if (!user) { toast.error('Log in to like recipes'); navigate('/auth/login'); return; }
+    const wasLiked = !!interactionState[recipeId]?.liked;
+
+    setInteractionState((prev) => ({
+      ...prev,
+      [recipeId]: {
+        ...(prev[recipeId] || { likes: 0, saves: 0 }),
+        liked: !wasLiked,
+        saved: prev[recipeId]?.saved || false,
+        likes: wasLiked ? Math.max(0, (prev[recipeId]?.likes || 0) - 1) : (prev[recipeId]?.likes || 0) + 1,
+        saves: prev[recipeId]?.saves || 0,
+      },
+    }));
+
     try {
-      await socialApi.like(recipeId);
-      toast.success('Recipe liked!');
+      const { data } = wasLiked ? await socialApi.unlike(recipeId) : await socialApi.like(recipeId);
+      if (data?.data?.count !== undefined) {
+        setInteractionState((prev) => ({
+          ...prev,
+          [recipeId]: {
+            ...(prev[recipeId] || {}),
+            likes: data.data.count,
+          },
+        }));
+      }
+      toast.success(wasLiked ? 'Like removed' : 'Recipe liked!');
     } catch (err) {
-      if (err?.response?.status === 409) toast.success('Already liked!');
-      else toast.error(err?.response?.data?.message || 'Like failed');
+      setInteractionState((prev) => ({
+        ...prev,
+        [recipeId]: {
+          ...(prev[recipeId] || {}),
+          liked: wasLiked,
+          likes: wasLiked ? (prev[recipeId]?.likes || 0) + 1 : Math.max(0, (prev[recipeId]?.likes || 0) - 1),
+        },
+      }));
+      toast.error(err?.response?.data?.message || 'Like failed');
     }
   };
 
@@ -77,8 +173,10 @@ const Home = () => {
           searchApi.trendingRecipes({ limit: 8 }),
           searchApi.trendingChefs({ limit: 4 }),
         ]);
-        setTrendingRecipes(recipesRes.data.data?.recipes || recipesRes.data.recipes || []);
+        const nextRecipes = recipesRes.data.data?.recipes || recipesRes.data.recipes || [];
+        setTrendingRecipes(nextRecipes);
         setTrendingChefs(chefsRes.data.data?.chefs || chefsRes.data.chefs || []);
+        await loadInteractionState(nextRecipes);
       } catch {
         // fail silently on homepage
       } finally {
@@ -86,7 +184,7 @@ const Home = () => {
       }
     };
     load();
-  }, []);
+  }, [user]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -228,8 +326,13 @@ const Home = () => {
                       )}
                       <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{(recipe.prepTimeMinutes || 0) + (recipe.cookTimeMinutes || 0)}m</span>
                     </div>
-                    <button onClick={(e) => { e.preventDefault(); handleSave(recipe._id); }} className="mt-3 w-full border border-surface-300 rounded-full py-2 text-sm font-semibold text-surface-700 hover:bg-brand-50 hover:border-brand-500 hover:text-brand-600 transition-all flex items-center justify-center gap-2">
-                      Save Recipe <Bookmark className="w-4 h-4" />
+                    <button onClick={(e) => { e.preventDefault(); handleSave(recipe._id); }} className={`mt-3 w-full border rounded-full py-2 text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+                      interactionState[recipe._id]?.saved
+                        ? 'border-brand-500 bg-brand-50 text-brand-700'
+                        : 'border-surface-300 text-surface-700 hover:bg-brand-50 hover:border-brand-500 hover:text-brand-600'
+                    }`}>
+                      {interactionState[recipe._id]?.saved ? 'Saved' : 'Save Recipe'}
+                      <Bookmark className={`w-4 h-4 ${interactionState[recipe._id]?.saved ? 'fill-current' : ''}`} />
                     </button>
                   </div>
                 </div>
@@ -294,8 +397,10 @@ const Home = () => {
                     )}
                   </div>
                   {/* Heart button */}
-                  <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleLike(recipe._id); }} className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 flex items-center justify-center shadow hover:bg-brand-50 transition-colors">
-                    <Heart className="w-5 h-5 text-brand-500" />
+                  <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleLike(recipe._id); }} className={`absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center shadow transition-colors ${
+                    interactionState[recipe._id]?.liked ? 'bg-red-50 hover:bg-red-100' : 'bg-white/90 hover:bg-brand-50'
+                  }`}>
+                    <Heart className={`w-5 h-5 ${interactionState[recipe._id]?.liked ? 'fill-red-500 text-red-500' : 'text-brand-500'}`} />
                   </button>
                 </Link>
                 <div className="mt-3">
@@ -311,7 +416,7 @@ const Home = () => {
                     {[...Array(5)].map((_, i) => (
                       <Star key={i} className={`w-3.5 h-3.5 ${i < Math.round(recipe.rating || 0) ? 'fill-current' : 'opacity-30'}`} />
                     ))}
-                    <span className="text-surface-500 ml-1">{recipe.likes || 0} Ratings</span>
+                    <span className="text-surface-500 ml-1">{recipe.ratingCount || 0} Ratings</span>
                   </div>
                 </div>
               </div>
