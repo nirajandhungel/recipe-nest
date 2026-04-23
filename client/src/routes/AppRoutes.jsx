@@ -25,6 +25,7 @@ import SavedRecipes from '../pages/User/SavedRecipes';
 import Followers from '../pages/User/Followers';
 import Following from '../pages/User/Following';
 import ProfileSettings from '../pages/User/ProfileSettings';
+import Inbox from '../pages/User/Inbox';
 
 // Chef
 import MyRecipes from '../pages/Chef/MyRecipes';
@@ -62,6 +63,8 @@ const AppRoutes = () => (
       <Route path="/saved" element={<SavedRecipes />} />
       <Route path="/followers" element={<Followers />} />
       <Route path="/following" element={<Following />} />
+      <Route path="/inbox" element={<Inbox />} />
+      <Route path="/inbox/:conversationId" element={<Inbox />} />
       <Route path="/settings/profile" element={<ProfileSettings />} />
     </Route>
 
