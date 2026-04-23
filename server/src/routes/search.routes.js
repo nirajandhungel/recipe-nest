@@ -4,6 +4,7 @@ const { Router } = require('express');
 const { Recipe } = require('../models/recipe.model');
 const { Profile } = require('../models/profile.model');
 const { User } = require('../models/user.model');
+const { buildProfileImageMap, attachProfileImage } = require('../utils/profile-image');
 
 const router = Router();
 
@@ -29,6 +30,10 @@ router.get('/recipes', async (req, res) => {
       .populate('chefId', 'firstName lastName username')
       .sort({ createdAt: -1 })
       .limit(Number(limit));
+    const chefImageMap = await buildProfileImageMap(recipes.map((recipe) => recipe.chefId?._id));
+    recipes.forEach((recipe) => {
+      attachProfileImage(recipe.chefId, chefImageMap);
+    });
       
     res.json({ success: true, data: { recipes } });
   } catch (err) {
@@ -83,6 +88,10 @@ router.get('/trending/recipes', async (req, res) => {
       .sort({ views: -1, likes: -1 })
       .limit(Number(limit))
       .lean();
+    const chefImageMap = await buildProfileImageMap(recipes.map((recipe) => recipe.chefId?._id));
+    recipes.forEach((recipe) => {
+      attachProfileImage(recipe.chefId, chefImageMap);
+    });
     res.json({ success: true, data: { recipes } });
   } catch (err) {
     console.error('Trending Recipes Error:', err);
