@@ -18,19 +18,50 @@ class ProfileController {
   static getAllProfiles = asyncHandler(async (req, res) => {
     const paginationValidation = validateData(paginationSchema, req.query);
     const { page = 1, limit = 10 } = paginationValidation.success ? paginationValidation.data : {};
+    const { q } = req.query;
 
-    const total = await Profile.countDocuments();
+    // Only get chef users (exclude admin and regular users)
+    const userQuery = { role: 'chef' };
+    if (q) {
+      userQuery.$or = [
+        { firstName: { $regex: q, $options: 'i' } },
+        { lastName: { $regex: q, $options: 'i' } },
+        { username: { $regex: q, $options: 'i' } },
+      ];
+    }
+
+    const chefUsers = await User.find(userQuery).select('_id');
+    const chefIds = chefUsers.map((u) => u._id);
+
+    const profileQuery = { userId: { $in: chefIds } };
+    const total = await Profile.countDocuments(profileQuery);
     const { skip } = getPaginationData(total, page, limit);
 
-    const profiles = await Profile.find()
-      .populate('userId', 'firstName lastName username email')
+    const profiles = await Profile.find(profileQuery)
+      .populate('userId', 'firstName lastName username email role followerCount followingCount recipeCount')
       .sort({ rating: -1 })
       .skip(skip)
       .limit(limit);
 
+    // If authenticated, batch-check which chefs the user is following
+    let profileData = profiles.map((p) => p.toObject());
+    if (req.user) {
+      const profileUserIds = profiles.map((p) => p.userId?._id || p.userId);
+      const follows = await Follow.find({
+        followerId: req.user.userId,
+        followingId: { $in: profileUserIds },
+      });
+      const followedIds = new Set(follows.map((f) => f.followingId.toString()));
+
+      profileData = profileData.map((p) => ({
+        ...p,
+        isFollowing: followedIds.has((p.userId?._id || p.userId).toString()),
+      }));
+    }
+
     const meta = getPaginationData(total, page, limit);
 
-    return sendPaginated(res, HTTP_STATUS.OK, profiles, meta, MESSAGES.PROFILE_FETCHED);
+    return sendPaginated(res, HTTP_STATUS.OK, profileData, meta, MESSAGES.PROFILE_FETCHED);
   });
 
   /**
