@@ -19,6 +19,13 @@ export const formatDate = (date, fmt = 'MMM d, yyyy') => {
 export const getInitials = (firstName = '', lastName = '') =>
   `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
 
+export const getUserProfileImage = (user = {}) =>
+  user?.profileImage ||
+  user?.profile?.profileImage ||
+  user?.userId?.profileImage ||
+  user?.author?.profileImage ||
+  null;
+
 export const truncate = (str, n = 120) =>
   str?.length > n ? `${str.slice(0, n)}...` : str;
 
