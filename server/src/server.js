@@ -1,8 +1,10 @@
 'use strict';
 
+const http = require('http');
 const { createApp } = require('./app');
 const { connectDB } = require('./config/database');
 const { config, validateConfig } = require('./config/config');
+const { initSocket } = require('./socket/chat.socket');
 
 const startServer = async () => {
   try {
@@ -14,10 +16,12 @@ const startServer = async () => {
 
     // Create app
     const app = createApp();
+    const httpServer = http.createServer(app);
+    initSocket(httpServer, config.CLIENT_URL);
 
     // Start server
     const PORT = config.PORT;
-    const server = app.listen(PORT, () => {
+    const server = httpServer.listen(PORT, () => {
       console.log(`
 ╔══════════════════════════════════════════════════════════════╗
 ║                    RecipeNest Backend                        ║

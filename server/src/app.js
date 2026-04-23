@@ -17,6 +17,7 @@ const socialRoutes = require('./routes/social.routes');
 const adminRoutes = require('./routes/admin.routes');
 const searchRoutes = require('./routes/search.routes');
 const analyticsRoutes = require('./routes/analytics.routes');
+const chatRoutes = require('./routes/chat.routes');
 
 const createApp = () => {
   const app = express();
@@ -77,6 +78,7 @@ const createApp = () => {
   app.use('/api/admin', adminRoutes);
   app.use('/api/search', searchRoutes);
   app.use('/api/analytics', analyticsRoutes);
+  app.use('/api/chat', chatRoutes);
 
   // ─── 404 Handler ─────────────────────────────────────────────────────────
   app.use((req, res) => {
