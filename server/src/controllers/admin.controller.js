@@ -6,6 +6,7 @@ const { Profile } = require('../models/profile.model');
 const { AuditLog } = require('../models/auditlog.model');
 const { asyncHandler } = require('../middlewares/error.middleware');
 const { getPaginationData } = require('../utils/helpers');
+const { buildProfileImageMap, attachProfileImage } = require('../utils/profile-image');
 
 /**
  * Admin Controller for managing users and recipes
@@ -39,11 +40,12 @@ const getUsers = asyncHandler(async (req, res) => {
 
   // Populate profiles to show featured status
   const userIds = users.map(u => u._id);
-  const profiles = await Profile.find({ userId: { $in: userIds } }).select('userId isFeatured');
+  const profiles = await Profile.find({ userId: { $in: userIds } }).select('userId isFeatured profileImage');
   
   const usersWithProfile = users.map(u => ({
     ...u,
-    isFeatured: profiles.find(p => p.userId.toString() === u._id.toString())?.isFeatured || false
+    isFeatured: profiles.find(p => p.userId.toString() === u._id.toString())?.isFeatured || false,
+    profileImage: profiles.find(p => p.userId.toString() === u._id.toString())?.profileImage || null
   }));
 
   res.json({ 
@@ -84,6 +86,10 @@ const getPendingRecipes = asyncHandler(async (req, res) => {
   const recipes = await Recipe.find({ status: 'pending' })
     .populate('chefId', 'firstName lastName username')
     .sort({ updatedAt: -1 });
+  const chefImageMap = await buildProfileImageMap(recipes.map((recipe) => recipe.chefId?._id));
+  recipes.forEach((recipe) => {
+    attachProfileImage(recipe.chefId, chefImageMap);
+  });
   res.json({ success: true, data: { recipes } });
 });
 
