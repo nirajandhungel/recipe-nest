@@ -18,6 +18,7 @@ const {
 } = require('../utils/helpers');
 const { sendSuccess, errorResponses } = require('../utils/response');
 const { EmailService } = require('../services/email.service');
+const { buildProfileImageMap, attachProfileImage } = require('../utils/profile-image');
 const { MESSAGES, HTTP_STATUS } = require('../constants');
 const { asyncHandler } = require('../middlewares/error.middleware');
 
@@ -69,6 +70,8 @@ class AuthController {
     await EmailService.sendWelcomeEmail(user);
 
     const userDoc = user.toJSON();
+    const imageMap = await buildProfileImageMap([userDoc._id]);
+    attachProfileImage(userDoc, imageMap);
 
     return sendSuccess(
       res,
@@ -107,6 +110,8 @@ class AuthController {
     });
 
     const userDoc = user.toJSON();
+    const imageMap = await buildProfileImageMap([userDoc._id]);
+    attachProfileImage(userDoc, imageMap);
 
     return sendSuccess(
       res,
@@ -252,7 +257,10 @@ class AuthController {
       return errorResponses.notFound(res, 'User not found');
     }
 
-    return sendSuccess(res, HTTP_STATUS.OK, user, 'User retrieved successfully');
+    const userObj = user.toObject();
+    const imageMap = await buildProfileImageMap([userObj._id]);
+    attachProfileImage(userObj, imageMap);
+    return sendSuccess(res, HTTP_STATUS.OK, userObj, 'User retrieved successfully');
   });
 }
 
