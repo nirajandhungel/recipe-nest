@@ -15,6 +15,7 @@ const { getPaginationData } = require('../utils/helpers');
 const { sendSuccess, errorResponses, sendPaginated } = require('../utils/response');
 const { MESSAGES, HTTP_STATUS, AUDIT_ACTIONS } = require('../constants');
 const { asyncHandler } = require('../middlewares/error.middleware');
+const { buildProfileImageMap, attachProfileImage } = require('../utils/profile-image');
 
 /**
  * FormData sends everything as strings, but the Zod schema expects
@@ -146,6 +147,10 @@ class RecipeController {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
+    const chefImageMap = await buildProfileImageMap(recipes.map((recipe) => recipe.chefId?._id));
+    recipes.forEach((recipe) => {
+      attachProfileImage(recipe.chefId, chefImageMap);
+    });
 
     const meta = getPaginationData(total, page, limit);
 
@@ -157,6 +162,9 @@ class RecipeController {
    */
   static getRecipe = asyncHandler(async (req, res) => {
     const recipe = await Recipe.findById(req.params.id).populate('chefId', 'firstName lastName username');
+    const chefImageMap = await buildProfileImageMap([recipe.chefId?._id]);
+    attachProfileImage(recipe.chefId, chefImageMap);
+
 
     if (!recipe) {
       return errorResponses.notFound(res, MESSAGES.RECIPE_NOT_FOUND);
