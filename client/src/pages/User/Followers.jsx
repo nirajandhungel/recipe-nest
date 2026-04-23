@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { socialApi } from '../../api/socialApi';
 import { useAuth } from '../../context/AuthContext';
-import { getInitials } from '../../utils/helpers';
+import { getInitials, getUserProfileImage } from '../../utils/helpers';
 import Loader from '../../components/ui/Loader';
 import { Link } from 'react-router-dom';
 import { Users } from 'lucide-react';
@@ -11,15 +11,25 @@ const UserList = ({ users, emptyMsg }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       {users.map((item) => {
-        const u = item.followerId || item.followingId || item;
+        // If it's a follow doc, it has followerId or followingId
+        // If it's your FOLLOWING list, you want the 'followingId'
+        // If it's your FOLLOWERS list, you want the 'followerId'
+        // If both are present, we need to know which one to pick. 
+        // But in this app, we can detect if it's the populated object.
+        const u = (item.followerId?.username ? item.followerId : item.followingId) || item;
+        const avatar = getUserProfileImage(u);
         return (
           <Link key={item._id || u._id} to={`/profile/${u._id}`} className="card p-4 flex items-center gap-3 hover:shadow-md transition-all">
-            <div className="w-10 h-10 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-sm font-semibold flex-shrink-0">
-              {getInitials(u.firstName, u.lastName)}
-            </div>
-            <div>
-              <p className="font-medium text-sm">{u.firstName} {u.lastName}</p>
-              <p className="text-xs text-surface-400">@{u.username}</p>
+            {avatar ? (
+              <img src={avatar} alt="" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                {getInitials(u.firstName, u.lastName)}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm truncate">{u.firstName} {u.lastName}</p>
+              <p className="text-xs text-surface-400 truncate">@{u.username}</p>
             </div>
           </Link>
         );
