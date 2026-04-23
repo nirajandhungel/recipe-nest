@@ -20,10 +20,12 @@ router.delete('/comments/:commentId', apiLimiter, authenticate, SocialController
 // Save routes
 router.post('/:recipeId/save', apiLimiter, authenticate, SocialController.saveRecipe);
 router.delete('/:recipeId/save', apiLimiter, authenticate, SocialController.unsaveRecipe);
+router.get('/:recipeId/saved', apiLimiter, authenticate, SocialController.isRecipeSaved);
 
 // Follow routes
 router.post('/users/:userId/follow', apiLimiter, authenticate, SocialController.followChef);
 router.delete('/users/:userId/follow', apiLimiter, authenticate, SocialController.unfollowChef);
+router.get('/users/:userId/is-following', apiLimiter, authenticate, SocialController.isFollowing);
 router.get('/users/:userId/followers', apiLimiter, optionalAuth, SocialController.getFollowers);
 router.get('/users/:userId/following', apiLimiter, optionalAuth, SocialController.getFollowing);
 
