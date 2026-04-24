@@ -26,7 +26,15 @@ const profileSchema = new mongoose.Schema(
       maxlength: [500, 'Bio cannot exceed 500 characters'],
       trim: true,
     },
-    speciality: {
+    specialties: {
+      type: String,
+      trim: true,
+    },
+    location: {
+      type: String,
+      trim: true,
+    },
+    website: {
       type: String,
       trim: true,
     },
