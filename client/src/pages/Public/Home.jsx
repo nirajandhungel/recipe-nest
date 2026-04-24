@@ -484,29 +484,39 @@ const Home = () => {
       </section>
 
       {/* ═══════════ TOP CHEFS ═══════════ */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-2">
-            <ChefHat className="w-5 h-5 text-brand-500" />
-            <h2 className="font-display text-2xl font-extrabold text-surface-900 dark:text-white">Top Chefs</h2>
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16 border-t border-surface-100 dark:border-surface-800">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <ChefHat className="w-5 h-5 text-brand-500" />
+              <span className="font-display text-lg font-bold text-brand-600 uppercase tracking-widest text-xs">Community</span>
+            </div>
+            <h2 className="font-display text-3xl md:text-4xl font-extrabold text-surface-900 dark:text-white">Meet Our Top Chefs</h2>
+            <p className="text-surface-500 mt-2 max-w-xl">Follow the most inspiring culinary creators in our community.</p>
           </div>
-          <Link to="/chefs" className="text-sm text-brand-600 hover:underline flex items-center gap-1 font-semibold">
-            View all <ArrowRight className="w-4 h-4" />
+          <Link to="/chefs" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-brand-200 text-brand-600 font-bold hover:bg-brand-50 transition-all group">
+            View all chefs 
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
 
         {loading ? (
           <Loader />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {trendingChefs.map((c) => <ProfileCard key={c._id} profile={c} />)}
           </div>
         )}
       </section>
 
-      {/* ═══════════ SEARCH CTA — "What would you like to cook?" ═══════════ */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 pb-14">
-        <div className="border border-surface-200 dark:border-surface-700 rounded-xl p-8 md:p-10">
+     
+
+      {/* ═══════════ GREEN BOTTOM BANNER ═══════════ */}
+      <section className="bg-brand-500">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
+ {/* ═══════════ SEARCH CTA — "What would you like to cook?" ═══════════ */}
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 ">
+        <div className="bg-white border border-surface-200 dark:border-surface-700 rounded-xl p-8 md:p-10">
           <div className="flex flex-col md:flex-row md:items-start gap-8">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-3">
@@ -545,23 +555,6 @@ const Home = () => {
           </div>
         </div>
       </section>
-
-      {/* ═══════════ GREEN BOTTOM BANNER ═══════════ */}
-      <section className="bg-brand-500">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div>
-            <h2 className="font-display text-2xl md:text-3xl font-extrabold text-white uppercase tracking-wide">
-              Home of the Home Cook
-            </h2>
-            <p className="text-brand-50 mt-2 text-sm max-w-md">
-              RecipeNest is where food lovers, home cooks, and professional chefs come together to share and discover great food.
-            </p>
-          </div>
-          <div>
-            <Link to="/auth/register" className="inline-flex items-center gap-2 px-8 py-3 bg-white text-brand-600 font-bold rounded-md hover:bg-surface-50 transition-colors shadow-lg">
-              Join as Chef <ArrowRight className="w-5 h-5" />
-            </Link>
-          </div>
         </div>
       </section>
     </div>
