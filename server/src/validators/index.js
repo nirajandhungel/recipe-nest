@@ -116,8 +116,7 @@ const createRecipeSchema = z
     servings: z.number().int().min(1, 'Servings must be at least 1').max(100, 'Servings cannot exceed 100'),
     tags: z.array(z.string().trim()).optional(),
     status: z.enum(['draft', 'published']).optional(),
-  })
-  .strict();
+  });
 
 const updateRecipeSchema = createRecipeSchema.partial();
 
