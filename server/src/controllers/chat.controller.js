@@ -40,7 +40,7 @@ class ChatController {
 
     let conversation = await Conversation.findOne({
       participants: { $all: [currentUserId, userId] },
-    }).populate('participants', 'firstName lastName username role');
+    }).populate('participants', 'firstName lastName username role').lean();
 
     if (!conversation) {
       conversation = await Conversation.create({
@@ -53,7 +53,7 @@ class ChatController {
       conversation = await Conversation.findById(conversation._id).populate(
         'participants',
         'firstName lastName username role'
-      );
+      ).lean();
     }
 
     const imageMap = await buildProfileImageMap(conversation.participants.map((participant) => participant?._id));
@@ -75,7 +75,8 @@ class ChatController {
     })
       .populate('participants', 'firstName lastName username role')
       .sort({ updatedAt: -1 })
-      .limit(50);
+      .limit(50)
+      .lean();
 
     const participantIds = conversations.flatMap((conversation) => conversation.participants.map((p) => p?._id));
     const imageMap = await buildProfileImageMap(participantIds);
@@ -111,7 +112,8 @@ class ChatController {
     const messages = await Message.find(query)
       .populate('senderId', 'firstName lastName username role')
       .sort({ _id: -1 })
-      .limit(safeLimit);
+      .limit(safeLimit)
+      .lean();
 
     const senderMap = await buildProfileImageMap(messages.map((message) => message.senderId?._id));
     messages.forEach((message) => attachProfileImage(message.senderId, senderMap));
