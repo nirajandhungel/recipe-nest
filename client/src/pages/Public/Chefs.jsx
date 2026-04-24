@@ -30,13 +30,24 @@ const Chefs = () => {
   }, [query, page]);
 
   return (
-    <div className="bg-white dark:bg-surface-950 min-h-screen">
-      {/* Page header */}
-      <div className="border-b border-surface-200 dark:border-surface-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-surface-500 mb-2">COMMUNITY</p>
-          <h1 className="font-display text-3xl md:text-4xl font-extrabold text-surface-900 dark:text-white mb-2">Meet Our Chefs</h1>
-          <p className="text-surface-500 text-sm">Talented cooks sharing their passion for food</p>
+    <div className="bg-[#fcfaf2] dark:bg-surface-950 min-h-screen pb-20">
+      {/* Premium Hero Section */}
+      <div className="relative overflow-hidden bg-brand-600 py-16 md:py-24 mb-10">
+        {/* Abstract shapes or pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <path d="M0 100 C 20 0 50 0 100 100 Z" fill="white" />
+          </svg>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 text-center">
+          <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 tracking-tight">
+            Meet Our <span className="text-brand-200">Talented Chefs</span>
+          </h1>
+          <p className="text-brand-50 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
+            Discover the creative minds behind your favorite recipes. From home cooks to professionals, 
+            our community is built on a shared passion for exceptional food.
+          </p>
         </div>
       </div>
 
