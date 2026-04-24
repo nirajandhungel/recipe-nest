@@ -172,7 +172,8 @@ class ProfileController {
 
     let uploadResult;
     try {
-      uploadResult = await CloudinaryService.uploadImage(
+      // Use optimized upload for profile images (800x800)
+      uploadResult = await CloudinaryService.uploadOptimizedImage(
         file.buffer,
         'recipenest/profiles',
         `${req.user.userId}-profile`
@@ -190,13 +191,6 @@ class ProfileController {
         profileImage: uploadResult.secure_url,
       });
     } else {
-      if (profile.profileImage) {
-        try {
-          await CloudinaryService.deleteImage(profile.profileImage);
-        } catch (error) {
-          console.error('Failed to delete old profile image:', error);
-        }
-      }
       profile.profileImage = uploadResult.secure_url;
       await profile.save();
     }
@@ -215,7 +209,8 @@ class ProfileController {
 
     let uploadResult;
     try {
-      uploadResult = await CloudinaryService.uploadImage(
+      // Optimized upload for banners using the specialized service method
+      uploadResult = await CloudinaryService.uploadBanner(
         file.buffer,
         'recipenest/banners',
         `${req.user.userId}-banner`
@@ -227,26 +222,14 @@ class ProfileController {
 
     let profile = await Profile.findOne({ userId: req.user.userId });
 
-    try {
-      if (!profile) {
-        profile = await Profile.create({
-          userId: req.user.userId,
-          bannerImage: uploadResult.secure_url,
-        });
-      } else {
-        if (profile.bannerImage) {
-          try {
-            await CloudinaryService.deleteImage(profile.bannerImage);
-          } catch (error) {
-            console.error('Failed to delete old banner:', error);
-          }
-        }
-        profile.bannerImage = uploadResult.secure_url;
-        await profile.save();
-      }
-    } catch (error) {
-      console.error('[UPDATE ERROR] Failed to update profile banner in database:', error.message);
-      throw error;
+    if (!profile) {
+      profile = await Profile.create({
+        userId: req.user.userId,
+        bannerImage: uploadResult.secure_url,
+      });
+    } else {
+      profile.bannerImage = uploadResult.secure_url;
+      await profile.save();
     }
 
     return sendSuccess(res, HTTP_STATUS.OK, { bannerUrl: uploadResult.secure_url }, 'Banner image updated successfully');
