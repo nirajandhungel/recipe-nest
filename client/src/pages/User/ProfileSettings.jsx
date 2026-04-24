@@ -17,6 +17,8 @@ const ProfileSettings = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
+  const [previewBanner, setPreviewBanner] = useState(null);
   const [profile, setProfile] = useState(null);
   const imageRef = useRef();
   const bannerRef = useRef();
@@ -41,6 +43,12 @@ const ProfileSettings = () => {
       })
       .catch(() => toast.error('Failed to load profile'))
       .finally(() => setLoading(false));
+      
+    return () => {
+      // Cleanup preview URLs
+      if (previewImage) URL.revokeObjectURL(previewImage);
+      if (previewBanner) URL.revokeObjectURL(previewBanner);
+    };
   }, []);
 
   const onSubmit = async (data) => {
@@ -58,80 +66,155 @@ const ProfileSettings = () => {
 
   const handleImageUpload = async (file, type) => {
     if (!file) return;
-    const setter = type === 'image' ? setUploadingImage : setUploadingBanner;
+
+    // Size check (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5MB');
+      return;
+    }
+
+    const isAvatar = type === 'image';
+    const setter = isAvatar ? setUploadingImage : setUploadingBanner;
+    const previewSetter = isAvatar ? setPreviewImage : setPreviewBanner;
+    
+    // Create optimistic preview
+    const previewUrl = URL.createObjectURL(file);
+    previewSetter(previewUrl);
     setter(true);
+
+    const toastId = toast.loading(`Uploading ${isAvatar ? 'photo' : 'banner'}...`);
+
     try {
-      const fn = type === 'image' ? profileApi.uploadImage : profileApi.uploadBanner;
+      const fn = isAvatar ? profileApi.uploadImage : profileApi.uploadBanner;
       const { data } = await fn(file);
       const url = data.data?.imageUrl || data.data?.bannerUrl || data.imageUrl || data.bannerUrl;
-      if (type === 'image') updateUserState({ profileImage: url });
-      toast.success(`${type === 'image' ? 'Profile photo' : 'Banner'} updated!`);
+      
+      if (isAvatar) {
+        updateUserState({ profileImage: url });
+      } else {
+        setProfile(prev => ({ ...prev, bannerImage: url }));
+      }
+      
+      toast.success(`${isAvatar ? 'Profile photo' : 'Banner'} updated!`, { id: toastId });
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Upload failed');
+      toast.error(err?.response?.data?.message || 'Upload failed', { id: toastId });
+      // Reset preview on error
+      previewSetter(null);
     } finally {
       setter(false);
+      // We keep the preview for a bit to ensure smooth transition, 
+      // but Cloudinary URLs can be slow to propagate.
+      // Actually, once we have the URL, we should switch to it.
     }
   };
 
-  if (loading) return <Loader />;
+  if (loading) return <div className="py-20"><Loader /></div>;
 
   const labelClass = 'block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1';
 
   return (
-    <div className="max-w-2xl">
-      <div className="flex items-center gap-2 mb-6">
-        <User className="w-5 h-5 text-brand-500" />
-        <h1 className="font-display text-2xl font-bold">Profile Settings</h1>
+    <div className="max-w-2xl px-4 py-8 mx-auto sm:px-0">
+      <div className="flex items-center gap-2 mb-8">
+        <div className="p-2 bg-brand-100 dark:bg-brand-900/30 rounded-lg">
+          <User className="w-5 h-5 text-brand-600" />
+        </div>
+        <div>
+          <h1 className="font-display text-2xl font-bold">Profile Settings</h1>
+          <p className="text-sm text-surface-500">Manage your public profile and preferences</p>
+        </div>
       </div>
 
       {/* Avatar & Banner */}
-      <div className="card p-5 mb-5">
-        <h3 className="font-semibold mb-4">Photos</h3>
-
-        {/* Banner */}
-        <div
-          className="relative h-28 rounded-xl overflow-hidden bg-gradient-to-r from-brand-400 to-brand-600 mb-4 cursor-pointer group"
-          onClick={() => bannerRef.current?.click()}
-        >
-          {profile?.bannerImage && (
-            <img src={profile.bannerImage} alt="Banner" className="w-full h-full object-cover" />
-          )}
-          <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            {uploadingBanner ? (
-              <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Camera className="w-6 h-6 text-white" />
-            )}
-          </div>
+      <div className="card p-0 overflow-hidden mb-8 border-surface-200 dark:border-surface-800">
+        <div className="px-5 py-4 border-b border-surface-100 dark:border-surface-800 flex justify-between items-center">
+          <h3 className="font-display font-bold text-lg">Public Images</h3>
+          <span className="text-xs text-surface-400">Resolution matters for a great profile</span>
         </div>
-        <input ref={bannerRef} type="file" accept="image/*" className="hidden"
-          onChange={(e) => handleImageUpload(e.target.files?.[0], 'banner')} />
-
-        {/* Avatar */}
-        <div className="flex items-center gap-4">
-          <div className="relative cursor-pointer group" onClick={() => imageRef.current?.click()}>
-            {user?.profileImage ? (
-              <img src={user.profileImage} alt="" className="w-16 h-16 rounded-full object-cover" />
-            ) : (
-              <div className="w-16 h-16 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xl font-bold">
-                {getInitials(user?.firstName, user?.lastName)}
-              </div>
-            )}
-            <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              {uploadingImage ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+        
+        <div className="p-5">
+          {/* Banner */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-surface-500 mb-2 uppercase tracking-wider">Banner Image</label>
+            <div
+              className="relative h-40 sm:h-48 rounded-2xl overflow-hidden bg-surface-100 dark:bg-surface-800 cursor-pointer group"
+              onClick={() => !uploadingBanner && bannerRef.current?.click()}
+            >
+              {(previewBanner || profile?.bannerImage) ? (
+                <img 
+                  src={previewBanner || profile.bannerImage} 
+                  alt="Banner" 
+                  className={`w-full h-full object-cover transition-opacity duration-300 ${uploadingBanner ? 'opacity-50' : 'opacity-100'}`} 
+                />
               ) : (
-                <Camera className="w-4 h-4 text-white" />
+                <div className="w-full h-full bg-gradient-to-br from-brand-400 to-brand-600 opacity-20" />
               )}
+              
+              <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${uploadingBanner ? 'bg-black/20 opacity-100' : 'bg-black/40 opacity-0 group-hover:opacity-100'}`}>
+                {uploadingBanner ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                    <span className="text-white text-xs font-bold uppercase tracking-widest">Uploading...</span>
+                  </div>
+                ) : (
+                  <div className="bg-white/20 backdrop-blur-md p-3 rounded-full border border-white/30">
+                    <Camera className="w-6 h-6 text-white" />
+                  </div>
+                )}
+              </div>
+            </div>
+            <input ref={bannerRef} type="file" accept="image/*" className="hidden"
+              onChange={(e) => handleImageUpload(e.target.files?.[0], 'banner')} />
+          </div>
+
+          {/* Avatar */}
+          <div className="flex items-center gap-6">
+            <div 
+              className="relative cursor-pointer group" 
+              onClick={() => !uploadingImage && imageRef.current?.click()}
+            >
+              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden ring-4 ring-white dark:ring-surface-900 shadow-xl bg-surface-100 dark:bg-surface-800">
+                {(previewImage || user?.profileImage) ? (
+                  <img 
+                    src={previewImage || user.profileImage} 
+                    alt="" 
+                    className={`w-full h-full object-cover transition-opacity duration-300 ${uploadingImage ? 'opacity-50' : 'opacity-100'}`} 
+                  />
+                ) : (
+                  <div className="w-full h-full bg-brand-50 text-brand-700 flex items-center justify-center text-3xl font-bold">
+                    {getInitials(user?.firstName, user?.lastName)}
+                  </div>
+                )}
+              </div>
+              
+              <div className={`absolute inset-0 rounded-full flex items-center justify-center transition-all duration-300 ${uploadingImage ? 'bg-black/20 opacity-100' : 'bg-black/40 opacity-0 group-hover:opacity-100'}`}>
+                {uploadingImage ? (
+                  <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <div className="bg-white/20 backdrop-blur-md p-2 rounded-full border border-white/30">
+                    <Camera className="w-4 h-4 text-white" />
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex-1">
+              <h4 className="font-display font-bold text-lg text-surface-900 dark:text-white leading-tight">
+                {user?.firstName} {user?.lastName}
+              </h4>
+              <p className="text-surface-500 text-sm mb-3">@{user?.username || 'user'}</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => imageRef.current?.click()}
+                disabled={uploadingImage}
+              >
+                Change Photo
+              </Button>
             </div>
           </div>
-          <div>
-            <p className="font-medium text-sm">{user?.firstName} {user?.lastName}</p>
-            <p className="text-xs text-surface-500">Click photo to change</p>
-          </div>
+          <input ref={imageRef} type="file" accept="image/*" className="hidden"
+            onChange={(e) => handleImageUpload(e.target.files?.[0], 'image')} />
         </div>
-        <input ref={imageRef} type="file" accept="image/*" className="hidden"
-          onChange={(e) => handleImageUpload(e.target.files?.[0], 'image')} />
       </div>
 
       {/* Profile form */}
