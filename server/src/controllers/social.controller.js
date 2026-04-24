@@ -158,7 +158,8 @@ class SocialController {
       .populate('userId', 'firstName lastName username')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean();
     const commentImageMap = await buildProfileImageMap(comments.map((comment) => comment.userId?._id));
     comments.forEach((comment) => {
       attachProfileImage(comment.userId, commentImageMap);
@@ -309,7 +310,8 @@ class SocialController {
     const followers = await Follow.find({ followingId: userId })
       .populate('followerId', 'firstName lastName username')
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean();
     const followerImageMap = await buildProfileImageMap(followers.map((follow) => follow.followerId?._id));
     followers.forEach((follow) => {
       attachProfileImage(follow.followerId, followerImageMap);
@@ -337,7 +339,8 @@ class SocialController {
     const following = await Follow.find({ followerId: userId })
       .populate('followingId', 'firstName lastName username')
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean();
     const followingImageMap = await buildProfileImageMap(following.map((follow) => follow.followingId?._id));
     following.forEach((follow) => {
       attachProfileImage(follow.followingId, followingImageMap);
