@@ -36,6 +36,10 @@ const normaliseRecipeBody = (body) => {
     if (out[key] !== undefined) out[key] = Number(out[key]);
   });
 
+  // Remove fields that should not be updated manually
+  const sensitiveFields = ['_id', 'id', 'chefId', 'createdAt', 'updatedAt', '__v', 'views', 'likes', 'saves', 'comments', 'rating', 'ratingCount'];
+  sensitiveFields.forEach((field) => delete out[field]);
+
   // Cast nested numeric fields inside ingredients and filter out empty ones
   if (Array.isArray(out.ingredients)) {
     out.ingredients = out.ingredients
@@ -146,7 +150,8 @@ class RecipeController {
       .populate('chefId', 'firstName lastName username')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean();
     const chefImageMap = await buildProfileImageMap(recipes.map((recipe) => recipe.chefId?._id));
     recipes.forEach((recipe) => {
       attachProfileImage(recipe.chefId, chefImageMap);
@@ -161,7 +166,9 @@ class RecipeController {
    * Get a single recipe
    */
   static getRecipe = asyncHandler(async (req, res) => {
-    const recipe = await Recipe.findById(req.params.id).populate('chefId', 'firstName lastName username');
+    const recipe = await Recipe.findById(req.params.id)
+      .populate('chefId', 'firstName lastName username')
+      .lean();
     const chefImageMap = await buildProfileImageMap([recipe.chefId?._id]);
     attachProfileImage(recipe.chefId, chefImageMap);
 
@@ -184,8 +191,8 @@ class RecipeController {
       userId: req.user?.userId,
     });
 
+    await Recipe.findByIdAndUpdate(recipe._id, { $inc: { views: 1 } });
     recipe.views += 1;
-    await recipe.save();
 
     return sendSuccess(res, HTTP_STATUS.OK, recipe, MESSAGES.RECIPE_FETCHED);
   });
