@@ -4,6 +4,8 @@ const { Router } = require('express');
 const { Recipe } = require('../models/recipe.model');
 const { Profile } = require('../models/profile.model');
 const { User } = require('../models/user.model');
+const { Follow } = require('../models/social.model');
+const { optionalAuth } = require('../middlewares/auth.middleware');
 const { buildProfileImageMap, attachProfileImage } = require('../utils/profile-image');
 
 const router = Router();
@@ -43,7 +45,7 @@ router.get('/recipes', async (req, res) => {
 });
 
 // Search chefs
-router.get('/chefs', async (req, res) => {
+router.get('/chefs', optionalAuth, async (req, res) => {
   try {
     const { q, featured, limit = 20 } = req.query;
     const query = {};
@@ -70,7 +72,20 @@ router.get('/chefs', async (req, res) => {
       .lean();
 
     // Always filter for chefs
-    const chefs = profiles.filter(p => p.userId && p.userId.role === 'chef');
+    let chefs = profiles.filter(p => p.userId && p.userId.role === 'chef');
+
+    if (req.user) {
+      const chefUserIds = chefs.map(p => p.userId._id || p.userId);
+      const follows = await Follow.find({
+        followerId: req.user.userId,
+        followingId: { $in: chefUserIds }
+      });
+      const followedIds = new Set(follows.map(f => f.followingId.toString()));
+      chefs = chefs.map(p => ({
+        ...p,
+        isFollowing: followedIds.has((p.userId._id || p.userId).toString())
+      }));
+    }
       
     res.json({ success: true, data: { chefs } });
   } catch (err) {
@@ -100,7 +115,7 @@ router.get('/trending/recipes', async (req, res) => {
 });
 
 // Trending chefs
-router.get('/trending/chefs', async (req, res) => {
+router.get('/trending/chefs', optionalAuth, async (req, res) => {
   try {
     const { limit = 4 } = req.query;
     
@@ -112,8 +127,21 @@ router.get('/trending/chefs', async (req, res) => {
       .lean();
 
     // Filter to ensure only chefs are returned (in case an admin is featured)
-    const featuredChefs = profiles.filter(p => p.userId && p.userId.role === 'chef');
+    let featuredChefs = profiles.filter(p => p.userId && p.userId.role === 'chef');
     
+    if (req.user) {
+      const chefUserIds = featuredChefs.map(p => p.userId._id || p.userId);
+      const follows = await Follow.find({
+        followerId: req.user.userId,
+        followingId: { $in: chefUserIds }
+      });
+      const followedIds = new Set(follows.map(f => f.followingId.toString()));
+      featuredChefs = featuredChefs.map(p => ({
+        ...p,
+        isFollowing: followedIds.has((p.userId._id || p.userId).toString())
+      }));
+    }
+
     res.json({ success: true, data: { chefs: featuredChefs } });
   } catch (err) {
     console.error('Trending Chefs Error:', err);
