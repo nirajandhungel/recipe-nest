@@ -121,6 +121,42 @@ class CloudinaryService {
       streamifier.createReadStream(buffer).pipe(uploadStream);
     });
   }
+
+  /**
+   * Upload banner with optimized settings
+   */
+  static async uploadBanner(buffer, folder = 'recipenest/banners', filename) {
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder,
+          resource_type: 'auto',
+          public_id: filename,
+          overwrite: true,
+          quality: 'auto',
+          fetch_format: 'auto',
+          transformation: [
+            {
+              width: 1500,
+              height: 500,
+              crop: 'fill', // Fill is better for banners to ensure consistent size
+              gravity: 'center',
+              quality: 'auto',
+            },
+          ],
+        },
+        (error, result) => {
+          if (error) {
+            reject(new AppError(`Banner upload failed: ${error.message}`, 500));
+          } else {
+            resolve(result);
+          }
+        }
+      );
+
+      streamifier.createReadStream(buffer).pipe(uploadStream);
+    });
+  }
 }
 
 module.exports = { CloudinaryService };
