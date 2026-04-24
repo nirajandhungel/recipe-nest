@@ -7,3 +7,5 @@ build/
 
 server/seed-admin.js
 server/seed-recipe.js
+server/seed-final.js
+server/sync-counts.js
