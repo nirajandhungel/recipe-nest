@@ -8,6 +8,8 @@ const { config } = require('./config/config');
 const { securityMiddleware } = require('./middlewares/security.middleware');
 const { generalLimiter } = require('./middlewares/ratelimit.middleware');
 const { errorHandler } = require('./middlewares/error.middleware');
+const swaggerUi = require('swagger-ui-express');
+const { swaggerSpec } = require('./config/swagger');
 
 // Routes
 const authRoutes = require('./routes/auth.routes');
@@ -23,7 +25,9 @@ const createApp = () => {
   const app = express();
 
   // ─── Security & Headers ──────────────────────────────────────────────────
-  app.use(helmet());
+  app.use(helmet({
+    contentSecurityPolicy: false,  // Disabled to allow Swagger UI inline assets
+  }));
   app.use(
     cors({
       origin: config.CLIENT_URL,
@@ -68,6 +72,23 @@ const createApp = () => {
       status: 'running',
       environment: config.NODE_ENV,
     });
+  });
+
+  // ─── API Documentation (Swagger UI) ────────────────────────────────────
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'RecipeNest API Documentation',
+    customfavIcon: '',
+    swaggerOptions: {
+      persistAuthorization: true,
+      docExpansion: 'list',
+      filter: true,
+      tryItOutEnabled: true,
+    },
+  }));
+  app.get('/api/docs.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
   });
 
   // ─── API Routes ──────────────────────────────────────────────────────────
