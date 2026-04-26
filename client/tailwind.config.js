@@ -40,11 +40,13 @@ export default {
         'fade-in': 'fadeIn 0.3s ease-out',
         'slide-up': 'slideUp 0.4s ease-out',
         'slide-in': 'slideIn 0.3s ease-out',
+        'bounce-subtle': 'bounceSub 0.4s ease-out',
       },
       keyframes: {
         fadeIn: { from: { opacity: 0 }, to: { opacity: 1 } },
         slideUp: { from: { opacity: 0, transform: 'translateY(16px)' }, to: { opacity: 1, transform: 'translateY(0)' } },
         slideIn: { from: { opacity: 0, transform: 'translateX(-16px)' }, to: { opacity: 1, transform: 'translateX(0)' } },
+        bounceSub: { '0%': { transform: 'scale(0.8)' }, '50%': { transform: 'scale(1.15)' }, '100%': { transform: 'scale(1)' } },
       },
     },
   },
