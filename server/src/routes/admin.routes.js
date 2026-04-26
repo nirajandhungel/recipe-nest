@@ -25,6 +25,7 @@ router.post('/users/:userId/activate', (req, res, next) => {
 router.patch('/users/:userId/featured', adminController.toggleChefFeatured);
 router.delete('/users/:userId', adminController.deleteUser);
 router.get('/audit-logs', adminController.getAuditLogs);
+router.get('/audit-logs/export', adminController.exportAuditLogs);
 
 // Recipe moderation
 router.get('/recipes/pending', adminController.getPendingRecipes);

@@ -75,7 +75,7 @@ class ProfileController {
       return errorResponses.notFound(res, 'Chef not found');
     }
 
-    const profile = await Profile.findOne({ userId }).populate('userId', 'firstName lastName username email');
+    const profile = await Profile.findOne({ userId }).populate('userId', 'firstName lastName username email role createdAt');
     if (!profile) {
       return errorResponses.notFound(res, MESSAGES.PROFILE_NOT_FOUND);
     }
