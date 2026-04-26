@@ -3,12 +3,14 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { RoleProvider } from './context/RoleContext';
 import AppRoutes from './routes/AppRoutes';
+import BottomNav from './components/layout/BottomNav';
 
 const App = () => (
   <BrowserRouter>
     <AuthProvider>
       <RoleProvider>
         <AppRoutes />
+        <BottomNav />
         <Toaster
           position="top-right"
           toastOptions={{
