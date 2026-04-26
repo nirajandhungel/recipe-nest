@@ -67,11 +67,13 @@ const updateProfileSchema = z
     experience: z.string().trim().optional(),
     socialLinks: z
       .object({
-        instagram: z.string().url().optional(),
-        youtube: z.string().url().optional(),
-        twitter: z.string().url().optional(),
-        website: z.string().url().optional(),
-        tiktok: z.string().url().optional(),
+        instagram: z.string().url().optional().or(z.literal('')).nullable().transform(v => v === '' ? undefined : v),
+        youtube: z.string().url().optional().or(z.literal('')).nullable().transform(v => v === '' ? undefined : v),
+        twitter: z.string().url().optional().or(z.literal('')).nullable().transform(v => v === '' ? undefined : v),
+        facebook: z.string().url().optional().or(z.literal('')).nullable().transform(v => v === '' ? undefined : v),
+        linkedin: z.string().url().optional().or(z.literal('')).nullable().transform(v => v === '' ? undefined : v),
+        website: z.string().url().optional().or(z.literal('')).nullable().transform(v => v === '' ? undefined : v),
+        tiktok: z.string().url().optional().or(z.literal('')).nullable().transform(v => v === '' ? undefined : v),
       })
       .optional(),
   });
