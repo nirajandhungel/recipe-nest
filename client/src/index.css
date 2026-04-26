@@ -237,9 +237,34 @@
     padding-bottom: calc(60px + env(safe-area-inset-bottom, 8px));
   }
 
-  /* Inbox override — ensures the chat doesn't go behind the nav */
+  /* Inbox override — ensures the chat doesn't go behind the nav on mobile */
   .inbox-container {
     height: calc(100vh - 4rem - 60px - env(safe-area-inset-bottom, 0px)) !important;
+    margin: -1rem !important; /* Neutralize p-4 padding on mobile */
+    width: calc(100% + 2rem) !important; /* Expansion to fill the neutralized margins */
+  }
+}
+
+/* Default Inbox height for desktop (sidebar view) */
+@media (min-width: 768px) {
+  .inbox-container {
+    height: calc(100vh - 4rem) !important; /* Subtract only the navbar height */
+    margin: -1.5rem !important; /* Counteract DashboardLayout padding */
+    width: calc(100% + 3rem) !important;
+    overflow: hidden; /* Prevent the container itself from scrolling */
+  }
+
+  /* Ensure the main dashboard area doesn't double-scroll */
+  .inbox-container:has(+) , 
+  html:has(.inbox-container) main {
+    overflow: hidden !important;
+  }
+}
+
+/* Ensure mobile inbox scrolling is also independent */
+@media (max-width: 767px) {
+  .btm-nav-active {
+    overflow: hidden !important; 
   }
 }
 

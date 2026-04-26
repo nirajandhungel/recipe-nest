@@ -444,7 +444,7 @@ const Inbox = () => {
         {activeConversation ? (
           <>
             {/* Chat header */}
-            <div className="relative z-10 px-3 sm:px-4 py-2.5 flex items-center gap-3 bg-white dark:bg-surface-900 border-b border-surface-200 dark:border-surface-800">
+            <div className="relative z-10 px-3 sm:px-4 py-2.5 flex items-center gap-3 bg-white dark:bg-surface-900 border-b border-surface-200 dark:border-surface-800 flex-shrink-0">
               <Link to="/inbox" className="md:hidden p-1.5 -ml-1 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors">
                 <ArrowLeft className="w-5 h-5 text-surface-600" />
               </Link>
@@ -546,7 +546,7 @@ const Inbox = () => {
             </div>
 
             {/* Message input */}
-            <div className="relative z-10 px-3 sm:px-4 py-2.5 bg-white/95 dark:bg-surface-900/95 backdrop-blur border-t border-surface-200/60 dark:border-surface-800">
+            <div className="relative z-10 px-3 sm:px-4 py-2.5 bg-white/95 dark:bg-surface-900/95 backdrop-blur border-t border-surface-200/60 dark:border-surface-800 flex-shrink-0">
               <div className="flex items-center gap-2">
                 <div className="flex-1 flex items-center gap-2 bg-surface-50 dark:bg-surface-800 rounded-full px-4 py-1 border border-surface-200 dark:border-surface-700 focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-500/20 transition-all">
                   <input
