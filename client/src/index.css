@@ -93,3 +93,169 @@
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
 }
+
+/* ── Inbox / Chat animations ── */
+@keyframes messageAppear {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.message-appear {
+  animation: messageAppear 0.25s ease-out;
+}
+
+.tick-seen {
+  animation: tickPop 0.3s ease-out;
+}
+
+@keyframes tickPop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ── Bottom Navigation ── */
+.btm-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.dark .btm-nav {
+  background: rgba(12, 10, 9, 0.85);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.btm-nav-inner {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: center;
+  height: 60px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.btm-nav-inner.btm-nav-6 {
+  grid-template-columns: repeat(6, 1fr);
+}
+
+.btm-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 100%;
+  text-decoration: none;
+  color: #78716c;
+  transition: color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+}
+
+.btm-nav-item.btm-active {
+  color: #29b117;
+}
+
+.dark .btm-nav-item {
+  color: #29b117;
+}
+
+.dark .btm-nav-item.btm-active {
+  color: #fafaf9;
+}
+
+.btm-nav-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.btm-nav-label {
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+.btm-active .btm-nav-label {
+  font-weight: 600;
+}
+
+.btm-nav-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1.5px solid #d6d3d1;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.dark .btm-nav-avatar {
+  border-color: #57534e;
+}
+
+.btm-avatar-active {
+  border-color: #0c0a09;
+  border-width: 2px;
+  transform: scale(1.1);
+}
+
+.dark .btm-avatar-active {
+  border-color: #fafaf9;
+}
+
+/* Hide bottom nav on md+ screens */
+@media (min-width: 768px) {
+  .btm-nav {
+    display: none;
+  }
+}
+
+/* Add padding at bottom of pages to compensate for bottom nav on mobile */
+@media (max-width: 767px) {
+  .pb-btm-nav {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* Add bottom padding to main content areas */
+  main {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 8px));
+  }
+
+  /* Inbox override — ensures the chat doesn't go behind the nav */
+  .inbox-container {
+    height: calc(100vh - 4rem - 60px - env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+/* Slide-up animation for popups */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.2s ease-out;
+}
+
