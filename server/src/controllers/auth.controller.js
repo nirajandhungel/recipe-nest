@@ -18,8 +18,9 @@ const {
 } = require('../utils/helpers');
 const { sendSuccess, errorResponses } = require('../utils/response');
 const { EmailService } = require('../services/email.service');
+const { AuditService } = require('../services/audit.service');
 const { buildProfileImageMap, attachProfileImage } = require('../utils/profile-image');
-const { MESSAGES, HTTP_STATUS } = require('../constants');
+const { MESSAGES, HTTP_STATUS, AUDIT_ACTIONS } = require('../constants');
 const { asyncHandler } = require('../middlewares/error.middleware');
 
 class AuthController {
@@ -68,6 +69,16 @@ class AuthController {
 
     await EmailService.sendVerificationEmail(user, verificationTokenRaw);
     await EmailService.sendWelcomeEmail(user);
+
+    // Log user creation
+    await AuditService.log({
+      adminId: user._id,
+      action: AUDIT_ACTIONS.USER_CREATED,
+      targetType: 'user',
+      targetId: user._id,
+      changes: { role: user.role, email: user.email },
+      ipAddress: req.ip,
+    });
 
     const userDoc = user.toJSON();
     const imageMap = await buildProfileImageMap([userDoc._id]);

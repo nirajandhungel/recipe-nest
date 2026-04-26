@@ -4,6 +4,8 @@ const { User } = require('../models/user.model');
 const { Recipe } = require('../models/recipe.model');
 const { Profile } = require('../models/profile.model');
 const { AuditLog } = require('../models/auditlog.model');
+const { AuditService } = require('../services/audit.service');
+const { AUDIT_ACTIONS } = require('../constants');
 const { asyncHandler } = require('../middlewares/error.middleware');
 const { getPaginationData } = require('../utils/helpers');
 const { buildProfileImageMap, attachProfileImage } = require('../utils/profile-image');
@@ -70,6 +72,17 @@ const updateUserStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
   const user = await User.findByIdAndUpdate(userId, { status }, { new: true });
   if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+  const action = status === 'suspended' ? AUDIT_ACTIONS.USER_SUSPENDED : AUDIT_ACTIONS.USER_UPDATED;
+  await AuditService.log({
+    adminId: req.user.userId,
+    action,
+    targetType: 'user',
+    targetId: userId,
+    changes: { status },
+    ipAddress: req.ip,
+  });
+
   res.json({ success: true, message: `User status updated to ${status}`, data: user });
 });
 
@@ -78,6 +91,16 @@ const deleteUser = asyncHandler(async (req, res) => {
   if (!user) return res.status(404).json({ success: false, message: 'User not found' });
   await Profile.deleteOne({ userId: user._id });
   await Recipe.deleteMany({ chefId: user._id });
+
+  await AuditService.log({
+    adminId: req.user.userId,
+    action: AUDIT_ACTIONS.USER_DELETED,
+    targetType: 'user',
+    targetId: req.params.userId,
+    changes: { email: user.email, username: user.username },
+    ipAddress: req.ip,
+  });
+
   res.json({ success: true, message: 'User and all related data deleted' });
 });
 
@@ -120,6 +143,16 @@ const approveRecipe = asyncHandler(async (req, res) => {
   }, { new: true });
 
   if (!recipe) return res.status(404).json({ success: false, message: 'Recipe not found' });
+
+  await AuditService.log({
+    adminId: req.user.userId,
+    action: AUDIT_ACTIONS.RECIPE_PUBLISHED,
+    targetType: 'recipe',
+    targetId: recipeId,
+    changes: { status: 'published' },
+    ipAddress: req.ip,
+  });
+
   res.json({ success: true, message: 'Recipe approved and published', data: recipe });
 });
 
@@ -130,10 +163,21 @@ const rejectRecipe = asyncHandler(async (req, res) => {
   const recipe = await Recipe.findByIdAndUpdate(recipeId, {
     status: 'rejected',
     isPublished: false,
-    rejectionReason: reason // Make sure to add this field to the model if needed, or just status
+    rejectionReason: reason
   }, { new: true });
 
   if (!recipe) return res.status(404).json({ success: false, message: 'Recipe not found' });
+
+  await AuditService.log({
+    adminId: req.user.userId,
+    action: AUDIT_ACTIONS.RECIPE_FLAGGED,
+    targetType: 'recipe',
+    targetId: recipeId,
+    reason,
+    changes: { status: 'rejected' },
+    ipAddress: req.ip,
+  });
+
   res.json({ success: true, message: 'Recipe rejected', data: recipe });
 });
 
@@ -144,6 +188,16 @@ const flagRecipe = asyncHandler(async (req, res) => {
   }, { new: true });
 
   if (!recipe) return res.status(404).json({ success: false, message: 'Recipe not found' });
+
+  await AuditService.log({
+    adminId: req.user.userId,
+    action: AUDIT_ACTIONS.RECIPE_FLAGGED,
+    targetType: 'recipe',
+    targetId: recipeId,
+    changes: { status: 'flagged' },
+    ipAddress: req.ip,
+  });
+
   res.json({ success: true, message: 'Recipe flagged for review', data: recipe });
 });
 
@@ -210,21 +264,32 @@ const getRecipeStats = asyncHandler(async (req, res) => {
 
 const getAuditLogs = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page, 10) || 1;
-  const limit = parseInt(req.query.limit, 10) || 10;
+  const limit = parseInt(req.query.limit, 10) || 20;
 
   const total = await AuditLog.countDocuments();
-  const { skip } = getPaginationData(total, page, limit);
+  const totalPages = Math.ceil(total / limit) || 1;
+  const skip = (page - 1) * limit;
 
   const logs = await AuditLog.find()
-    .populate('adminId', 'firstName lastName username')
+    .populate('adminId', 'firstName lastName username email')
     .sort({ createdAt: -1 })
     .skip(skip)
-    .limit(limit);
+    .limit(limit)
+    .lean();
+
+  // Map adminId to userId field for frontend compatibility
+  const mappedLogs = logs.map(log => ({
+    ...log,
+    userId: log.adminId, // Frontend reads log.userId
+  }));
 
   res.json({
     success: true,
-    data: logs,
-    meta: getPaginationData(total, page, limit)
+    data: {
+      logs: mappedLogs,
+      totalPages,
+      total,
+    }
   });
 });
 
@@ -247,11 +312,29 @@ const toggleChefFeatured = asyncHandler(async (req, res) => {
     await profile.save();
   }
 
+  await AuditService.log({
+    adminId: req.user.userId,
+    action: AUDIT_ACTIONS.ADMIN_ACTION,
+    targetType: 'user',
+    targetId: userId,
+    changes: { isFeatured },
+    ipAddress: req.ip,
+  });
+
   res.json({ 
     success: true, 
     message: `Chef ${isFeatured ? 'featured' : 'removed from featured list'}`, 
     data: profile 
   });
+});
+
+const exportAuditLogs = asyncHandler(async (req, res) => {
+  const { AuditService: AuditSvc } = require('../services/audit.service');
+  const csv = await AuditSvc.exportLogs();
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename=audit-logs-${new Date().toISOString().split('T')[0]}.csv`);
+  res.send(csv);
 });
 
 module.exports = {
@@ -266,6 +349,7 @@ module.exports = {
   flagRecipe,
   toggleChefFeatured,
   getAuditLogs,
+  exportAuditLogs,
   getStats,
   getUserStats,
   getRecipeStats
