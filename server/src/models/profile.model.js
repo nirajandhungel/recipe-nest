@@ -7,6 +7,8 @@ const socialLinksSchema = new mongoose.Schema(
     instagram: { type: String, trim: true },
     youtube: { type: String, trim: true },
     twitter: { type: String, trim: true },
+    facebook: { type: String, trim: true },
+    linkedin: { type: String, trim: true },
     website: { type: String, trim: true },
     tiktok: { type: String, trim: true },
   },
