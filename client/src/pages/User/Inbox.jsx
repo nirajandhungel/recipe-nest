@@ -194,6 +194,31 @@ const Inbox = () => {
     return () => { mounted = false; };
   }, [conversationId, navigate]);
 
+  // Initial presence check for all conversations
+  useEffect(() => {
+    const socket = getChatSocket();
+    if (!socket || conversations.length === 0) return;
+    
+    conversations.forEach(c => {
+      const peerId = c.otherUser?._id;
+      if (peerId) {
+        socket.emit('presence:get', { userId: peerId }, ({ online }) => {
+          setPresence(prev => ({ ...prev, [peerId]: online }));
+        });
+      }
+    });
+  }, [conversations.length]);
+
+  // Check presence for active chat
+  useEffect(() => {
+    const socket = getChatSocket();
+    if (!socket || !activeUser?._id) return;
+
+    socket.emit('presence:get', { userId: activeUser._id }, ({ online }) => {
+      setPresence(prev => ({ ...prev, [activeUser._id]: online }));
+    });
+  }, [activeUser?._id, activeConversation?._id]);
+
   // Load messages for active conversation
   useEffect(() => {
     if (!conversationId) return;

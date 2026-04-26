@@ -44,6 +44,11 @@ const initSocket = (httpServer, clientUrl) => {
     onlineUsers.set(currentUserId, true);
     ioInstance.emit('presence:update', { userId: currentUserId, online: true });
 
+    // Allow user to check status of a specific user
+    socket.on('presence:get', ({ userId }, ack) => {
+      if (ack) ack({ online: onlineUsers.has(userId) });
+    });
+
     socket.on('chat:send', async (payload, ack) => {
       try {
         const { conversationId, text } = payload || {};
