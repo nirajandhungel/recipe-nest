@@ -207,7 +207,9 @@ const Home = () => {
           {/* Left: Featured large image */}
           <div className="lg:w-3/5">
             {loading ? (
-              <div className="aspect-[4/3] bg-surface-100 rounded-lg animate-pulse"></div>
+<div className="aspect-[4/3] bg-surface-100 rounded-lg  text-red-600 font-bold flex items-center justify-center text-center">
+  Refresh the page, Render is waking up!
+</div>
             ) : featuredRecipe ? (
               <Link to={`/recipes/${featuredRecipe._id}`} className="block group">
                 <div className="aspect-[4/3] overflow-hidden rounded-lg bg-surface-100">
