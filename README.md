@@ -2,28 +2,24 @@
 
 **RecipeNest** is a premium, full-stack ecosystem designed to bridge the gap between food enthusiasts and professional chefs. Discover, create, and share culinary excellence.
 
-[![React](https://img.shields.io/badge/Frontend-React-61DAFB?style=flat-square&logo=react)](https://reactjs.org/)
-[![Node](https://img.shields.io/badge/Backend-Node.js-339933?style=flat-square&logo=node.js)](https://nodejs.org/)
-[![MongoDB](https://img.shields.io/badge/Database-MongoDB-47A248?style=flat-square&logo=mongodb)](https://www.mongodb.com/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
-
 ---
 
 ## ✨ The Experience
 
 Experience a seamless journey from discovering a new dish to mastering its creation.
 
-| **🏠 Home Dashboard** | **👨‍🍳 Chef Profile** |
-|:---:|:---:|
-| ![Home](https://via.placeholder.com/800x450?text=Home+Page+Preview) | ![Chef Profile](https://via.placeholder.com/800x450?text=Chef+Profile+Preview) |
-| *Immersive recipe discovery.* | *Professional chef portfolios.* |
+<img width="1913" height="966" alt="image" src="https://github.com/user-attachments/assets/530c1f40-70fa-4388-aae2-de95a1fbd148" />
+<img width="1920" height="964" alt="image" src="https://github.com/user-attachments/assets/20c41725-f103-4d09-9196-c0c18f786408" />
+<img width="1920" height="968" alt="image" src="https://github.com/user-attachments/assets/1a6fc6f1-6f02-487d-a149-6e5b869283a1" />
+<img width="1920" height="964" alt="image" src="https://github.com/user-attachments/assets/3347904f-b03d-404a-a049-ef339b4f8baf" />
+<img width="1920" height="963" alt="image" src="https://github.com/user-attachments/assets/66362f9c-8f38-4444-b898-cb18ea6c45cb" />
+<img width="1920" height="965" alt="image" src="https://github.com/user-attachments/assets/14e7062b-f180-4a87-a6f0-1b2d49594c54" />
+<img width="1920" height="967" alt="image" src="https://github.com/user-attachments/assets/463baf6c-c446-45fb-b917-8ad46463e8ce" />
+<img width="1920" height="965" alt="image" src="https://github.com/user-attachments/assets/4c75dd59-24c1-4e6d-9332-759b27270224" />
+<img width="1920" height="964" alt="image" src="https://github.com/user-attachments/assets/35ce3581-0a7f-4f68-8cfd-881398604f44" />
+<img width="1920" height="964" alt="image" src="https://github.com/user-attachments/assets/07475c62-f136-4e66-b7f6-313652036f15" />
+<img width="1920" height="971" alt="image" src="https://github.com/user-attachments/assets/43ce5872-d57c-4046-b86e-5abd7deadaf4" />
 
-| **📨 Inbox Messaging** | **🍳 Recipe Details** |
-|:---:|:---:|
-| ![Inbox](https://via.placeholder.com/800x450?text=Inbox+Messaging+Preview) | ![Recipe Detail](https://via.placeholder.com/800x450?text=Recipe+Detail+Preview) |
-| *Real-time community interactions.* | *Step-by-step culinary guides.* |
-
----
 
 ## 🚀 Key Features
 
