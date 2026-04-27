@@ -1,4 +1,4 @@
-# <img src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=50&h=50&fit=crop" width="40" height="40" style="vertical-align: middle; border-radius: 8px; margin-right: 10px;"> RecipeNest
+# RecipeNest
 
 **RecipeNest** is a premium, full-stack ecosystem designed to bridge the gap between food enthusiasts and professional chefs. Discover, create, and share culinary excellence.
 
