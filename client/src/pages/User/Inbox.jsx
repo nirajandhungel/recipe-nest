@@ -253,7 +253,7 @@ const Inbox = () => {
         prev
           .map((c) => {
             if (c._id !== incomingCid) return c;
-            const incomingFromOther = message.senderId?._id !== user?._id;
+            const incomingFromOther = message.senderId?._id !== user?._id;//Check Who Sent Message
             const nextUnreadCount =
               conversationId === incomingCid || !incomingFromOther
                 ? 0
