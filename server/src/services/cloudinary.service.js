@@ -26,7 +26,7 @@ class CloudinaryService {
         }
       );
 
-      streamifier.createReadStream(buffer).pipe(uploadStream);
+      streamifier.createReadStream(buffer).pipe(uploadStream);//Take the image buffer and send it as a stream to Cloudinary.”
     });
   }
 
