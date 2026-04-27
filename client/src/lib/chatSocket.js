@@ -6,17 +6,17 @@ let socket = null;
 
 export const connectChatSocket = (token) => {
   if (!token) return null;
-  if (socket?.connected) return socket;
+  if (socket?.connected) return socket; //already connected return existing socket
 
   socket = io(SOCKET_URL, {
-    transports: ['websocket'],
+    transports: ['websocket'], //forces websocket only, no long polling
     auth: { token },
   });
 
-  return socket;
+  return socket; // now components csn use socket.emit and socket.on
 };
 
-export const getChatSocket = () => socket;
+export const getChatSocket = () => socket;//Current active socket
 
 export const disconnectChatSocket = () => {
   if (socket) {
